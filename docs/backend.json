@@ -1,0 +1,192 @@
+
+{
+  "entities": {
+    "Client": {
+      "title": "Client",
+      "type": "object",
+      "description": "Represents a client in the billing system.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the client."
+        },
+        "billingAddress": {
+          "type": "string",
+          "description": "Billing address of the client."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the client.",
+          "format": "email"
+        },
+        "paymentTerms": {
+          "type": "string",
+          "description": "Payment terms for the client."
+        }
+      },
+      "required": [
+        "name",
+        "billingAddress",
+        "email",
+        "paymentTerms"
+      ]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "type": "object",
+      "description": "Represents an invoice in the billing system.",
+      "properties": {
+        "clientId": {
+          "type": "string",
+          "description": "ID of the client this invoice belongs to."
+        },
+        "client": {
+          "$ref": "#/entities/Client"
+        },
+        "issueDate": {
+          "type": "string",
+          "description": "Date the invoice was issued.",
+          "format": "date"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Date the invoice is due.",
+          "format": "date"
+        },
+        "lineItems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/InvoiceItem"
+          }
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total amount of the invoice."
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the invoice (e.g., sent, paid, overdue).",
+          "enum": ["Draft", "Sent", "Paid", "Overdue"]
+        },
+        "tax": {
+          "type": "number"
+        },
+        "discount": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "clientId",
+        "client",
+        "issueDate",
+        "dueDate",
+        "lineItems",
+        "totalAmount",
+        "status",
+        "tax",
+        "discount"
+      ]
+    },
+    "InvoiceItem": {
+      "title": "InvoiceItem",
+      "type": "object",
+      "description": "Represents an item within an invoice.",
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Description of the item."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the item."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price per unit of the item."
+        }
+      },
+      "required": [
+        "description",
+        "quantity",
+        "price"
+      ]
+    },
+    "Service": {
+      "title": "Service",
+      "type": "object",
+      "description": "Represents a billable service or machine usage.",
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Description of the service."
+        },
+        "rate": {
+          "type": "number",
+          "description": "The billing rate for the service."
+        },
+        "unit": {
+          "type": "string",
+          "description": "The unit of billing (e.g., 'per_hour', 'fixed').",
+          "enum": ["per_hour", "fixed"]
+        }
+      },
+      "required": ["description", "rate", "unit"]
+    },
+    "CompanyProfile": {
+      "title": "CompanyProfile",
+      "type": "object",
+      "description": "Represents the company's profile information.",
+      "properties": {
+        "companyName": {
+          "type": "string",
+          "description": "Name of the company."
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "URL for the company logo.",
+          "format": "uri"
+        }
+      },
+      "required": ["companyName"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/clients/{clientId}",
+        "definition": {
+          "entityName": "Client",
+          "schema": {
+            "$ref": "#/entities/Client"
+          },
+          "description": "Stores all client information."
+        }
+      },
+      {
+        "path": "/invoices/{invoiceId}",
+        "definition": {
+          "entityName": "Invoice",
+          "schema": {
+            "$ref": "#/entities/Invoice"
+          },
+          "description": "Stores all invoices for all clients."
+        }
+      },
+      {
+        "path": "/companyProfiles/{userId}",
+        "definition": {
+          "entityName": "CompanyProfile",
+          "schema": {
+            "$ref": "#/entities/CompanyProfile"
+          },
+          "description": "Stores company profile information for each user."
+        }
+      }
+    ]
+  }
+}

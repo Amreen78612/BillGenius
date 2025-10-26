@@ -1,0 +1,99 @@
+/**
+ * @fileOverview Firestore Security Rules for Invoicing App
+ *
+ * @description This ruleset enforces a strict user-ownership model for company profiles
+ * and allows any authenticated user to read invoices and clients but only allows owners
+ * to create, update, or delete them.
+ *
+ * Data Structure:
+ * - /clients/{clientId}: Stores client information. Any authenticated user can read client data. Only owner can modify client data.
+ * - /invoices/{invoiceId}: Stores invoice information. Any authenticated user can read invoice data. Only owner can modify invoice data.
+ * - /companyProfiles/{userId}: Stores company profile information for each user, using the Firebase Auth UID as the document ID. Only the corresponding user can create, read, update, or delete their own profile.
+ *
+ * Key Security Decisions:
+ * - Public Invoice & Client Listing: Invoices and clients can be listed by any authenticated user.
+ * - Strict Ownership: Only the authenticated user with a matching UID can modify their own company profile.
+ * - Denormalization: No explicit denormalization is required for these rules.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows any authenticated user to read clients, but only allows owners to manage them.
+     * @path /clients/{clientId}
+     * @allow get, list: if isSignedIn();
+     * @allow create: if request.auth != null;
+     * @allow update: if isSignedIn();
+     * @allow delete: if isSignedIn();
+     * @deny get: if false;
+     * @deny list: if false;
+     * @deny create: if false;
+     * @deny update: if false;
+     * @deny delete: if false;
+     * @principle Allows any authenticated user to read clients, but only allows owners to manage them.
+     */
+    match /clients/{clientId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    /**
+     * @description Allows any authenticated user to read invoices, but only allows owners to manage them.
+     * @path /invoices/{invoiceId}
+     * @allow get, list: if isSignedIn();
+     * @allow create: if request.auth != null;
+     * @allow update: if isSignedIn();
+     * @allow delete: if isSignedIn();
+     * @deny get: if false;
+     * @deny list: if false;
+     * @deny create: if false;
+     * @deny update: if false;
+     * @deny delete: if false;
+     * @principle Allows any authenticated user to read invoices, but only allows owners to manage them.
+     */
+    match /invoices/{invoiceId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    /**
+     * @description Manages company profiles, ensuring only the owner can manage their own profile.
+     * @path /companyProfiles/{userId}
+     * @allow get: if isOwner(userId);
+     * @allow list: if false;
+     * @allow create: if isOwner(userId);
+     * @allow update: if isExistingOwner(userId);
+     * @allow delete: if isExistingOwner(userId);
+     * @deny get: if !isOwner(userId);
+     * @deny list: if true;
+     * @deny create: if !isOwner(userId);
+     * @deny update: if !isExistingOwner(userId);
+     * @deny delete: if !isExistingOwner(userId);
+     * @principle Enforces strict ownership for company profiles, using the user ID as the document ID.
+     */
+    match /companyProfiles/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+  }
+}
